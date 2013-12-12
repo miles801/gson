@@ -3,10 +3,14 @@ package com.miles.utils.gson;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import org.apache.commons.io.IOUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.InvalidParameterException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +37,8 @@ public class GsonUtil {
      * 默认时间会以yyyy-MM-dd HH:mm:ss的格式进行转换
      *
      * @param obj
-     * @return
+     * @param exclusionFields
+     * @return String
      */
     public static String toJsonExclude(Object obj, String... exclusionFields) {
         validateJsonObject(obj);
@@ -61,6 +66,7 @@ public class GsonUtil {
      * 默认时间会以yyyy-MM-dd HH:mm:ss的格式进行转换
      *
      * @param obj
+     * @param includeFields
      * @return
      */
     public static String toJsonInclude(Object obj, String... includeFields) {
@@ -171,5 +177,43 @@ public class GsonUtil {
         if (obj instanceof String || obj instanceof Number || obj instanceof Boolean) {
             throw new RuntimeException("要转成json字符串的必须是复杂(引用)类型的对象！");
         }
+    }
+
+    /**
+     * 从request body中取出数据流（json字符串），并进行utf-8转码后，使用Gson转换成指定类型的对象
+     * 如果request、clazz为空，则抛出异常
+     *
+     * @param request                  包含请求体的request对象
+     * @param clazz                    要转成的对象的类型
+     * @param excludeFields（可选，要排除的字段）
+     * @param <T>
+     * @return clazz指定的类型
+     */
+    public static <T> T wrapDataToEntity(HttpServletRequest request, Class<T> clazz, String... excludeFields) {
+        if (request == null || clazz == null) {
+            throw new InvalidParameterException("参数不能为空！");
+        }
+        String data = null;
+        try {
+            data = IOUtils.toString(request.getInputStream(), "utf-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapter(Date.class, new DateConverter());
+        //要排除的字段
+        if (excludeFields != null && excludeFields.length > 0) {
+            GsonExclusion exclusions = new GsonExclusion();
+            exclusions.addExclusionField(excludeFields);
+            builder.setExclusionStrategies(exclusions);
+        }
+        Gson gson = builder.create();
+
+        T entity = gson.fromJson(data, clazz);
+        return entity;
+    }
+
+    public static void printSuccess(HttpServletResponse response) {
+        printJson(response, "success", true);
     }
 }

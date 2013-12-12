@@ -7,6 +7,9 @@
 .metadata
 bin/
 tmp/
+target/**
+*.gitignore
+*.class
 *.tmp
 *.bak
 *.swp

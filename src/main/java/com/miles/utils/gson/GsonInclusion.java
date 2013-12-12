@@ -46,11 +46,11 @@ public class GsonInclusion implements ExclusionStrategy {
         return false;
     }
 
-    public List<String> getInclusionFields() {
+    public List<String> getinclusionFields() {
         return inclusionFields;
     }
 
-    public void setInclusionFields(List<String> inclusionFields) {
+    public void setinclusionFields(List<String> inclusionFields) {
         this.inclusionFields = inclusionFields;
     }
 
